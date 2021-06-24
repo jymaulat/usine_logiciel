@@ -1,0 +1,143 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+
+# put the public key in the authorized_keys file
+
+$script_inject_pk=<<-'EOF'
+cat /vagrant/id_rsa.pub >> /home/vagrant/.ssh/authorized_keys
+EOF
+
+$script_install_jenkins=<<-'EOF'
+sudo yum install java-1.8.0-openjdk-devel
+sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
+sudo yum update
+sudo yum install jenkins
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+sudo firewall-cmd --permanent --zone=public --add-port=8080/tcp
+sudo firewall-cmd --reload
+EOF
+
+
+
+Vagrant.configure("2") do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+
+  # Every Vagrant development environment requires a box. You can search for
+  # boxes at https://vagrantcloud.com/search.
+
+  #-------------------------------------------------------
+  # MACHINE DEVELOPPEUR
+  #-------------------------------------------------------
+  
+  (1..2).each do |i|
+    config.vm.define "dev0#{i}" do |subconfig|
+      subconfig.vm.box = "ubuntu/xenial64"
+      subconfig.vm.hostname = "dev0#{i}"
+      subconfig.vm.network :"private_network" , ip: "10.0.0.10#{i}"
+      subconfig.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+      end
+      subconfig.vm.synced_folder ".", "/vagrant", type: "rsync"
+      subconfig.vm.provision "shell", inline: $script_inject_pk
+    end
+  end
+
+  #-------------------------------------------------------
+  # MACHINE CI
+  #-------------------------------------------------------
+
+  config.vm.define "jenkins" do |subconfig|
+    subconfig.vm.box = "centos/7"
+    subconfig.vm.hostname = "jenkins"
+    subconfig.vm.network :"private_network", ip: "10.0.0.20"
+    subconfig.vm.provider "virtualbox" do |vb|
+      vb.memory = "12288"
+    end
+    subconfig.vm.provision "shell", inline: $script_inject_pk
+#    subconfig.vm.provision "shell", inline: $script_install_jenkins
+
+ #   subconfig.vm.provision "shell",
+ #   inline: "yum install ava-1.8.0-openjdk-devel"
+ #   inline: "wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo"
+#    inline: 
+   end
+
+  #-------------------------------------------------------
+  # MACHINE Ansible
+  #-------------------------------------------------------
+
+  config.vm.define "ansible" do |subconfig|
+    subconfig.vm.box = "centos/7"
+    subconfig.vm.hostname = "ansible"
+    subconfig.vm.network :"private_network", ip: "10.0.0.10"
+    subconfig.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024"
+    end
+    subconfig.vm.provision "file", source: "./id_rsa", destination: "/home/vagrant/.ssh/"
+   end
+
+
+
+  # Disable automatic box update checking. If you disable this, then
+  # boxes will only be checked for updates when the user runs
+  # `vagrant box outdated`. This is not recommended.
+  # config.vm.box_check_update = false
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine. In the example below,
+  # accessing "localhost:8080" will access port 80 on the guest machine.
+  # NOTE: This will enable public access to the opened port
+  # config.vm.network "forwarded_port", guest: 80, host: 8080
+
+  # Create a forwarded port mapping which allows access to a specific port
+  # within the machine from a port on the host machine and only allow access
+  # via 127.0.0.1 to disable public access
+  # config.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "127.0.0.1"
+
+  # Create a private network, which allows host-only access to the machine
+  # using a specific IP.
+  # config.vm.network "private_network", ip: "192.168.33.10"
+
+  # Create a public network, which generally matched to bridged network.
+  # Bridged networks make the machine appear as another physical device on
+  # your network.
+  # config.vm.network "public_network"
+
+  # Share an additional folder to the guest VM. The first argument is
+  # the path on the host to the actual folder. The second argument is
+  # the path on the guest to mount the folder. And the optional third
+  # argument is a set of non-required options.
+  # config.vm.synced_folder "../data", "/vagrant_data"
+
+  # Provider-specific configuration so you can fine-tune various
+  # backing providers for Vagrant. These expose provider-specific options.
+  # Example for VirtualBox:
+  #
+  # config.vm.provider "virtualbox" do |vb|
+  #   # Display the VirtualBox GUI when booting the machine
+  #   vb.gui = true
+  #
+  #   # Customize the amount of memory on the VM:
+  #   vb.memory = "1024"
+  # end
+  #
+  # View the documentation for the provider you are using for more
+  # information on available options.
+
+  # Enable provisioning with a shell script. Additional provisioners such as
+  # Ansible, Chef, Docker, Puppet and Salt are also available. Please see the
+  # documentation for more information about their specific syntax and use.
+  # config.vm.provision "shell", inline: <<-SHELL
+  #   apt-get update
+  #   apt-get install -y apache2
+  # SHELL
+end
