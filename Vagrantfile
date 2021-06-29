@@ -63,12 +63,6 @@ Vagrant.configure("2") do |config|
       vb.memory = "12288"
     end
     subconfig.vm.provision "shell", inline: $script_inject_pk
-#    subconfig.vm.provision "shell", inline: $script_install_jenkins
-
- #   subconfig.vm.provision "shell",
- #   inline: "yum install ava-1.8.0-openjdk-devel"
- #   inline: "wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo"
-#    inline: 
    end
 
   #-------------------------------------------------------
@@ -83,6 +77,37 @@ Vagrant.configure("2") do |config|
       vb.memory = "1024"
     end
     subconfig.vm.provision "file", source: "./id_rsa", destination: "/home/vagrant/.ssh/"
+   end
+
+
+
+  #-------------------------------------------------------
+  # MACHINE Prod ( Tomcat )
+  #-------------------------------------------------------
+
+  config.vm.define "prod" do |subconfig|
+    subconfig.vm.box = "centos/7"
+    subconfig.vm.hostname = "prod"
+    subconfig.vm.network :"private_network", ip: "10.0.0.254"
+    subconfig.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+    end
+    subconfig.vm.provision "shell", inline: $script_inject_pk
+   end
+
+
+  #-------------------------------------------------------
+  # MACHINE Staging
+  #-------------------------------------------------------
+
+  config.vm.define "Test" do |subconfig|
+    subconfig.vm.box = "centos/7"
+    subconfig.vm.hostname = "Test"
+    subconfig.vm.network :"private_network", ip: "10.0.0.30"
+    subconfig.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+    end
+    subconfig.vm.provision "shell", inline: $script_inject_pk
    end
 
 
