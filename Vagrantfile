@@ -110,6 +110,19 @@ Vagrant.configure("2") do |config|
     subconfig.vm.provision "shell", inline: $script_inject_pk
    end
 
+  #-------------------------------------------------------
+  # MACHINE Monitoring elk
+  #-------------------------------------------------------
+
+  config.vm.define "monitoring" do |subconfig|
+    subconfig.vm.box = "centos/7"
+    subconfig.vm.hostname = "monitoring"
+    subconfig.vm.network :"private_network", ip: "10.0.0.40"
+    subconfig.vm.provider "virtualbox" do |vb|
+      vb.memory = "12288"
+    end
+    subconfig.vm.provision "shell", inline: $script_inject_pk
+   end
 
 
   # Disable automatic box update checking. If you disable this, then
